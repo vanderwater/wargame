@@ -17,8 +17,10 @@ var (
 	minStratString = flag.String("p2strat", "mm", "Choose \"mm\" or \"ab\"")
 	maxDepth       = flag.Int("p1depth", 3, "Choose a number 1-5")
 	minDepth       = flag.Int("p2depth", 3, "Choose a number 1-5")
+	verbose        = flag.Bool("v", false, "Prints move and board after each decision")
 )
 
+// Determine whether to use Minimax strategy or Alphabeta pruning
 func determineStrategy(strat string) func(*wargame.Board, int, string, string, string) (int, int, int) {
 	if strings.ToLower(strat) == "mm" || strings.ToLower(strat) == "minimax" {
 		return wargame.MinimaxMove
@@ -39,8 +41,10 @@ func main() {
 			maxStrat := determineStrategy(*maxStratString)
 			minStrat := determineStrategy(*minStratString)
 			board := wargame.ReadBoard(bufio.NewReader(boardFile))
-			board.Print()
-			wargame.PlayGame(board, maxStrat, minStrat, *maxDepth, *minDepth)
+			if *verbose {
+				board.Print()
+			}
+			wargame.PlayGame(board, maxStrat, minStrat, *maxDepth, *minDepth, *verbose)
 			return
 		}
 	}

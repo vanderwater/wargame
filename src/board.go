@@ -16,6 +16,7 @@ type Board struct {
 	points [][]pointInfo
 }
 
+// Reads a board from the file
 func ReadBoard(r *bufio.Reader) *Board {
 	result := make([][]pointInfo, 0)
 	var y int
@@ -38,6 +39,7 @@ func ReadBoard(r *bufio.Reader) *Board {
 	return &Board{result}
 }
 
+// Used for printing nicely
 func getWidth(x int) int {
 	if x == 0 {
 		return 1
@@ -51,6 +53,7 @@ func getWidth(x int) int {
 }
 
 // TODO/vanderwater: Improve by using byte buffers or copy for string concat
+// Prints the state of the board to the console
 func (board *Board) Print() {
 	if board == nil || len(board.points) == 0 {
 		return
@@ -73,6 +76,7 @@ func (board *Board) Print() {
 	fmt.Printf("%v\n", strings.Join(result, "\n"))
 }
 
+// A bunch of functions to tell us something about a point on the board
 func (board *Board) isValidPoint(x, y int) bool {
 	return !(board == nil || board.points == nil || y < 0 || x < 0 || y >= len(board.points) || x >= len(board.points[y]))
 }
@@ -93,6 +97,7 @@ func (board *Board) isPointAssissted(x, y int, owner string) bool {
 	return board.isValidPoint(x, y) && (board.isAllyOccupiedPoint(y+1, x, owner) || board.isAllyOccupiedPoint(y-1, x, owner) || board.isAllyOccupiedPoint(y, x+1, owner) || board.isAllyOccupiedPoint(y, x-1, owner))
 }
 
+// Captures a point on the board, propogate capture blitzes enemy pieces
 func (board *Board) capturePoint(x, y int, owner string) bool {
 	if !board.isValidPoint(x, y) || board.isOccupiedPoint(x, y) {
 		return false
@@ -120,6 +125,7 @@ func (board *Board) propogateCapture(x, y int, owner string) {
 	}
 }
 
+// Finds score of possible captures
 func (board *Board) propogateScorePotential(x, y int, owner string) int {
 	if !board.isValidPoint(x, y) {
 		return 0
@@ -140,6 +146,7 @@ func (board *Board) propogateScorePotential(x, y int, owner string) int {
 	return result
 }
 
+// Finds potential score of move
 func (board *Board) ScorePotential(x, y int, owner string) int {
 	if !board.isValidPoint(x, y) || board.isOccupiedPoint(x, y) {
 		return 0
@@ -151,23 +158,6 @@ func (board *Board) ScorePotential(x, y int, owner string) int {
 		result += board.propogateScorePotential(x, y, owner)
 	}
 	return result
-}
-
-func (board *Board) CalculateAllScores() string {
-	scores := make(map[string]int)
-	for _, row := range board.points {
-		for _, point := range row {
-			scores[point.owner] += point.value
-		}
-	}
-
-	var result string
-	for owner, total := range scores {
-		result += fmt.Sprintf("%v: %v\n", owner, total)
-	}
-
-	return result
-
 }
 
 func (board *Board) CalculatePlayerScore(owner string) int {
@@ -182,15 +172,40 @@ func (board *Board) CalculatePlayerScore(owner string) int {
 	return result
 }
 
+// TODO/vanderwater: Move away from hardcoded calculations
+func (board *Board) CalculateAllScores() string {
+	/**	scores := make(map[string]int)
+	for _, row := range board.points {
+		for _, point := range row {
+			scores[point.owner] += point.value
+		}
+	}
+
+	var result string
+	for owner, total := range scores {
+		result += fmt.Sprintf("%v: %v\n", owner, total)
+	}
+
+	return result
+	*/
+	greenScore := board.CalculatePlayerScore("Green")
+	blueScore := board.CalculatePlayerScore("Blue")
+	return fmt.Sprintf("Blue: %v\nGreen: %v\n", blueScore, greenScore)
+}
+
+// Deep Copies the board
 func (board *Board) Copy() *Board {
 	newBoard := make([][]pointInfo, len(board.points))
 	for index, row := range board.points {
 		newBoard[index] = make([]pointInfo, len(row))
-		copy(newBoard[index], row)
+		for x, point := range row {
+			newBoard[index][x] = pointInfo{owner: point.owner, value: point.value}
+		}
 	}
 	return &Board{newBoard}
 }
 
+// Detects if any squares are left open
 func (board *Board) isGameOver() bool {
 	for _, row := range board.points {
 		for _, point := range row {
